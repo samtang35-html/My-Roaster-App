@@ -3,120 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Uncle Sam Roaster Log</title>
+    <title>Uncle Sam Roaster Division</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #6F4E37; --secondary: #ECB176; --bg: #FED8B1; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; }
-        h2 { color: var(--primary); border-left: 5px solid var(--primary); padding-left: 10px; }
-        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .input-group { margin-bottom: 10px; }
-        label { display: block; font-size: 12px; color: #666; margin-bottom: 3px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 10px; }
-        canvas { background: #fff; border-radius: 10px; margin-top: 10px; }
+        :root { --primary: #6F4E37; --accent: #ECB176; --bg: #F5F5F5; }
+        body { font-family: -apple-system, system-ui; background: var(--bg); margin: 0; padding-bottom: 70px; }
+        .tab-content { display: none; padding: 15px; }
+        .active-content { display: block; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+        .nav-item { flex: 1; text-align: center; padding: 15px 5px; font-size: 12px; color: #666; cursor: pointer; }
+        .nav-item.active { color: var(--primary); font-weight: bold; border-top: 3px solid var(--primary); }
+        
+        h2 { color: var(--primary); font-size: 20px; border-bottom: 2px solid var(--accent); padding-bottom: 5px; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        label { display: block; font-size: 11px; color: #888; margin-bottom: 2px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; box-sizing: border-box; }
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+        
+        .history-item { border-left: 4px solid var(--accent); padding: 10px; background: #fff; margin-bottom: 8px; font-size: 14px; border-radius: 4px; }
+        .profit-tag { color: green; font-weight: bold; }
+        .loss-tag { color: red; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2>☕ 豆資訊 (Green Bean)</h2>
-    <div class="card grid">
-        <div class="input-group">
-            <label>產地/莊園</label>
-            <input type="text" id="origin" placeholder="例如：衣索比亞 74158">
+    <!-- Tab 1: 豆資訊 -->
+    <div id="tab-beans" class="tab-content active-content">
+        <h2>🌱 生豆資訊</h2>
+        <div class="card">
+            <div class="grid">
+                <div><label>產地</label><input type="text" id="b_origin"></div>
+                <div><label>莊園</label><input type="text" id="b_estate"></div>
+                <div><label>處理法</label><input type="text" id="b_process"></div>
+                <div><label>風味</label><input type="text" id="b_flavor"></div>
+                <div><label>密度</label><input type="number" id="b_density"></div>
+                <div><label>含水量 (%)</label><input type="number" id="b_moisture"></div>
+                <div><label>進貨量 (kg)</label><input type="number" id="b_qty"></div>
+                <div><label>成本 (HKD/kg)</label><input type="number" id="b_cost"></div>
+            </div>
+            <button onclick="saveBean()">儲存生豆</button>
         </div>
-        <div class="input-group">
-            <label>供應商</label>
-            <input type="text" id="supplier" placeholder="供應商名稱">
-        </div>
-        <div class="input-group">
-            <label>生豆含水量 (%)</label>
-            <input type="number" id="moisture" step="0.1" placeholder="11.5">
-        </div>
-        <div class="input-group">
-            <label>進貨數量 (kg)</label>
-            <input type="number" id="stockQty" placeholder="5">
-        </div>
+        <div id="beanHistory"></div>
     </div>
 
-    <h2>🔥 烘焙參數 (Roast Profile)</h2>
-    <div class="card">
-        <div class="grid">
-            <div class="input-group"><label>日期</label><input type="date" id="date"></div>
-            <div class="input-group"><label>入豆溫 (℃)</label><input type="number" id="chargeTemp"></div>
-            <div class="input-group"><label>回溫點 (TP)</label><input type="text" id="tp" placeholder="1'30 / 92℃"></div>
-            <div class="input-group"><label>轉黃點 (Dry)</label><input type="text" id="dryPhase"></div>
-            <div class="input-group"><label>一爆 (1st Crack)</label><input type="text" id="fc"></div>
-            <div class="input-group"><label>下豆溫 (Drop)</label><input type="number" id="dropTemp"></div>
-            <div class="input-group"><label>生豆重 (g)</label><input type="number" id="weightIn" value="150"></div>
-            <div class="input-group"><label>熟豆重 (g)</label><input type="number" id="weightOut"></div>
+    <!-- Tab 2: 烘焙參數 -->
+    <div id="tab-roast" class="tab-content">
+        <h2>🔥 烘焙紀錄</h2>
+        <div class="card">
+            <label>選擇生豆</label>
+            <select id="r_beanSelect" onchange="loadBeanInfo()"></select>
+            <div id="selectedBeanHint" style="font-size:12px; color:var(--primary); margin: 5px 0;"></div>
+            
+            <hr>
+            <div class="grid">
+                <div><label>日期</label><input type="date" id="r_date"></div>
+                <div><label>入豆溫 (℃)</label><input type="number" id="r_chargeT"></div>
+            </div>
+            
+            <div class="grid">
+                <div><label>回溫點 (℃)</label><input type="number" id="r_tpT"></div>
+                <div><label>回溫時間</label><input type="text" id="r_tpS" placeholder="1:30"></div>
+                <div><label>轉黃點 (℃)</label><input type="number" id="r_dryT"></div>
+                <div><label>轉黃時間</label><input type="text" id="r_dryS" placeholder="5:00"></div>
+                <div><label>一爆點 (℃)</label><input type="number" id="r_fcT"></div>
+                <div><label>一爆時間</label><input type="text" id="r_fcS" placeholder="9:00"></div>
+                <div><label>下豆溫 (℃)</label><input type="number" id="r_dropT"></div>
+                <div><label>下豆時間</label><input type="text" id="r_dropS" placeholder="11:00"></div>
+            </div>
+            
+            <div class="grid">
+                <div><label>生豆重 (g)</label><input type="number" id="r_wIn" value="150"></div>
+                <div><label>熟豆重 (g)</label><input type="number" id="r_wOut"></div>
+            </div>
+            <button onclick="saveRoast()">儲存烘焙</button>
         </div>
-        <div class="input-group" style="margin-top:10px;">
-            <label>失重率 (%)</label>
-            <input type="text" id="weightLoss" readonly style="background:#f0f0f0;">
-        </div>
+        <canvas id="roastChart" width="400" height="200"></canvas>
+        <div id="roastHistory"></div>
     </div>
 
-    <h2>💰 出貨紀錄 (Sales)</h2>
-    <div class="card grid">
-        <div class="input-group">
-            <label>售價 (HKD)</label>
-            <input type="number" id="price" placeholder="例如：120">
+    <!-- Tab 3: 出貨紀錄 -->
+    <div id="tab-sales" class="tab-content">
+        <h2>💰 出貨與盈利</h2>
+        <div class="card">
+            <label>選擇烘焙批次</label>
+            <select id="s_roastSelect" onchange="calcProfitHint()"></select>
+            
+            <div class="grid" style="margin-top:10px;">
+                <div><label>出貨重量 (g)</label><input type="number" id="s_weight"></div>
+                <div><label>售價 (HKD)</label><input type="number" id="s_price"></div>
+                <div><label>買家</label><input type="text" id="s_buyer"></div>
+            </div>
+            <div id="profitHint" style="font-size:13px; margin:5px 0;"></div>
+            <button onclick="saveSale()">儲存交易</button>
         </div>
-        <div class="input-group">
-            <label>買家/備註</label>
-            <input type="text" id="buyer" placeholder="朋友 A / 網店">
-        </div>
+        <div id="salesHistory"></div>
     </div>
 
-    <button onclick="saveData()">💾 儲存烘焙紀錄</button>
+    <!-- 底部導航 -->
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="showTab('beans')">生豆資訊</div>
+        <div class="nav-item" onclick="showTab('roast')">烘焙參數</div>
+        <div class="nav-item" onclick="showTab('sales')">出貨記錄</div>
+    </div>
 
-    <canvas id="roastChart" width="400" height="250"></canvas>
+<script>
+    // 1. 核心數據結構
+    let db = {
+        beans: JSON.parse(localStorage.getItem('coffee_beans') || '[]'),
+        roasts: JSON.parse(localStorage.getItem('coffee_roasts') || '[]'),
+        sales: JSON.parse(localStorage.getItem('coffee_sales') || '[]')
+    };
 
-    <script>
-        // 設定今天日期
-        document.getElementById('date').valueAsDate = new Date();
+    // 2. 切換頁面
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active-content'));
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.getElementById('tab-' + tabName).classList.add('active-content');
+        event.currentTarget.classList.add('active');
+        refreshSelectors();
+        renderHistories();
+        if(tabName === 'roast') initChart();
+    }
 
-        // 自動計算失重率
-        function updateLoss() {
-            let win = document.getElementById('weightIn').value;
-            let wout = document.getElementById('weightOut').value;
-            if (win && wout) {
-                let loss = ((win - wout) / win * 100).toFixed(2);
-                document.getElementById('weightLoss').value = loss + " %";
-            }
-        }
-        document.getElementById('weightOut').oninput = updateLoss;
+    // 3. 儲存功能
+    function saveBean() {
+        const bean = {
+            id: Date.now(),
+            origin: document.getElementById('b_origin').value,
+            estate: document.getElementById('b_estate').value,
+            cost: parseFloat(document.getElementById('b_cost').value) || 0,
+            text: `${document.getElementById('b_origin').value} (${document.getElementById('b_estate').value})`
+        };
+        db.beans.unshift(bean);
+        localStorage.setItem('coffee_beans', JSON.stringify(db.beans));
+        alert("豆資訊已儲存");
+        showTab('beans');
+    }
 
-        // 儲存邏輯 (簡單儲存到瀏覽器)
-        function saveData() {
-            const data = {
-                origin: document.getElementById('origin').value,
-                date: document.getElementById('date').value,
-                dropTemp: document.getElementById('dropTemp').value,
-                price: document.getElementById('price').value
-            };
-            alert("已成功記錄：" + data.origin + " (" + data.date + ")");
-            console.log("Saved Data:", data);
-            // 這裡可以延伸將資料 push 到一個 Array 並存入 localStorage
-        }
+    function saveRoast() {
+        const beanId = document.getElementById('r_beanSelect').value;
+        const bean = db.beans.find(b => b.id == beanId);
+        const wIn = parseFloat(document.getElementById('r_wIn').value);
+        const wOut = parseFloat(document.getElementById('r_wOut').value);
+        const loss = ((wIn - wOut) / wIn * 100).toFixed(2);
 
-        // 初始化一條示範曲線 (Chart.js)
+        const roast = {
+            id: Date.now(),
+            beanId: beanId,
+            beanName: bean ? bean.text : '未知',
+            costPerG: bean ? (bean.cost / 1000) : 0,
+            date: document.getElementById('r_date').value,
+            loss: loss,
+            wOut: wOut,
+            temps: [
+                document.getElementById('r_chargeT').value, 
+                document.getElementById('r_tpT').value,
+                document.getElementById('r_dryT').value,
+                document.getElementById('r_fcT').value,
+                document.getElementById('r_dropT').value
+            ]
+        };
+        db.roasts.unshift(roast);
+        localStorage.setItem('coffee_roasts', JSON.stringify(db.roasts));
+        alert(`儲存成功！失重率: ${loss}%`);
+        renderHistories();
+    }
+
+    function saveSale() {
+        const roastId = document.getElementById('s_roastSelect').value;
+        const roast = db.roasts.find(r => r.id == roastId);
+        const weight = parseFloat(document.getElementById('s_weight').value);
+        const price = parseFloat(document.getElementById('s_price').value);
+        
+        // 盈利計算邏輯：
+        // 1g 熟豆成本 = (1g 生豆成本) / (1 - 失重率)
+        const costPerG_Green = roast.costPerG;
+        const lossFactor = (100 - roast.loss) / 100;
+        const costPerG_Roasted = costPerG_Green / lossFactor;
+        const totalCost = costPerG_Roasted * weight;
+        const profit = price - totalCost;
+
+        const sale = {
+            beanName: roast.beanName,
+            price: price,
+            profit: profit.toFixed(2),
+            buyer: document.getElementById('s_buyer').value,
+            date: new Date().toLocaleDateString()
+        };
+        db.sales.unshift(sale);
+        localStorage.setItem('coffee_sales', JSON.stringify(db.sales));
+        alert(`出貨成功！獲利: $${sale.profit}`);
+        renderHistories();
+    }
+
+    // 4. 下拉選單同步
+    function refreshSelectors() {
+        const bSelect = document.getElementById('r_beanSelect');
+        bSelect.innerHTML = db.beans.map(b => `<option value="${b.id}">${b.text}</option>`).join('');
+        
+        const sSelect = document.getElementById('s_roastSelect');
+        sSelect.innerHTML = db.roasts.map(r => `<option value="${r.id}">${r.date} - ${r.beanName}</option>`).join('');
+    }
+
+    // 5. 渲染歷史紀錄
+    function renderHistories() {
+        document.getElementById('beanHistory').innerHTML = db.beans.map(b => `
+            <div class="history-item"><b>${b.text}</b><br>成本: HKD ${b.cost}/kg</div>
+        `).join('');
+
+        document.getElementById('roastHistory').innerHTML = db.roasts.map(r => `
+            <div class="history-item"><b>${r.date} ${r.beanName}</b><br>下豆: ${r.temps[4]}℃ | 失重: ${r.loss}%</div>
+        `).join('');
+
+        document.getElementById('salesHistory').innerHTML = db.sales.map(s => `
+            <div class="history-item">
+                <b>${s.buyer} - ${s.beanName}</b> ($${s.price})<br>
+                盈利: <span class="${s.profit > 0 ? 'profit-tag' : 'loss-tag'}">$${s.profit}</span>
+            </div>
+        `).join('');
+    }
+
+    // 6. 圖表初始化 (示範)
+    function initChart() {
         const ctx = document.getElementById('roastChart').getContext('2d');
-        const roastChart = new Chart(ctx, {
+        if(window.myChart) window.myChart.destroy();
+        window.myChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['0', '2', '4', '6', '8', '10', '12'],
-                datasets: [{
-                    label: '烘焙溫度 (BT)',
-                    data: [200, 95, 120, 150, 180, 200, 215],
-                    borderColor: '#6F4E37',
-                    tension: 0.4
-                }]
-            },
-            options: { responsive: true, plugins: { legend: { display: false } } }
+                labels: ['入豆', 'TP', '轉黃', '一爆', '下豆'],
+                datasets: [{ label: '溫度 (BT)', data: [200, 92, 150, 185, 210], borderColor: '#6F4E37' }]
+            }
         });
-    </script>
+    }
+
+    window.onload = () => {
+        document.getElementById('r_date').valueAsDate = new Date();
+        refreshSelectors();
+        renderHistories();
+    };
+</script>
 </body>
 </html>
