@@ -20,20 +20,20 @@
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
         .time-input { display: flex; align-items: center; gap: 2px; }
         .time-input input { text-align: center; padding: 8px 4px; }
-        .time-label { font-size: 10px; color: #999; }
         button { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; margin-top: 5px; }
         .export-btn { background: #555; font-size: 11px; padding: 6px 12px; width: auto; margin: 0; border-radius: 20px; }
-        .item-card { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; font-size: 14px; cursor: pointer; }
+        .history-section { margin-top: 10px; }
+        .item-card { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .item-row { display: flex; justify-content: space-between; align-items: center; }
         .details { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; font-size: 13px; color: #555; line-height: 1.6; }
         .details.show { display: block; }
-        .action-btns { display: flex; gap: 5px; margin-top: 10px; justify-content: flex-end; }
-        .btn-sm { padding: 4px 8px; border-radius: 4px; font-size: 11px; color: white; border: none; }
+        .action-btns { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
+        .btn-sm { padding: 6px 12px; border-radius: 4px; font-size: 12px; color: white; border: none; }
         .btn-edit { background: var(--info); }
         .btn-del { background: var(--danger); }
-        .batch-no { color: var(--primary); font-weight: bold; background: #FFF3E0; padding: 2px 5px; border-radius: 4px; font-size: 12px; }
+        .batch-no { color: var(--primary); font-weight: bold; background: #FFF3E0; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
         .profit { color: #28a745; font-weight: bold; }
-        canvas { max-width: 100%; background: white; border-radius: 8px; margin-top: 10px; }
+        canvas { max-width: 100%; background: white; border-radius: 8px; margin-top: 10px; display: block; }
     </style>
 </head>
 <body>
@@ -43,13 +43,14 @@
         <div class="card">
             <input type="hidden" id="b_id">
             <div class="grid">
-                <div style="grid-column: span 2;"><label>豆名</label><input type="text" id="b_title"></div>
+                <div><label>產地 (國家/區域)</label><input type="text" id="b_origin"></div>
+                <div><label>莊園 / 批次名稱</label><input type="text" id="b_estate"></div>
                 <div><label>處理法</label><input type="text" id="b_process"></div>
                 <div><label>成本 (HKD/kg)</label><input type="number" id="b_cost"></div>
             </div>
-            <button id="btn-save-bean" onclick="saveBean()">💾 儲存生豆</button>
+            <button id="btn-save-bean" onclick="saveBean()">💾 儲存生豆資料</button>
         </div>
-        <div id="beanHistory"></div>
+        <div class="history-section" id="beanHistory"></div>
     </div>
 
     <div id="tab-roast" class="tab-content">
@@ -59,55 +60,21 @@
             <div class="grid">
                 <div style="grid-column: span 2;"><label>選擇生豆</label><select id="r_beanSelect"></select></div>
                 <div style="grid-column: span 2;"><label>批次編號</label><input type="text" id="r_batchNo"></div>
-                <div><label>烘焙日期</label><input type="date" id="r_date"></div>
+                <div><label>日期</label><input type="date" id="r_date"></div>
                 <div><label>入豆溫 (℃)</label><input type="number" id="r_chargeT"></div>
             </div>
-            
             <div class="grid">
-                <!-- 時間輸入改為分/秒 -->
-                <div><label>回溫點 (℃ / 時間)</label>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        <input type="number" id="r_tpT" placeholder="度" style="flex:1;">
-                        <div class="time-input" style="flex:1.5;">
-                            <input type="number" id="r_tpM" placeholder="分"><span class="time-label">m</span>
-                            <input type="number" id="r_tpS" placeholder="秒"><span class="time-label">s</span>
-                        </div>
-                    </div>
-                </div>
-                <div><label>轉黃點 (℃ / 時間)</label>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        <input type="number" id="r_dryT" placeholder="度" style="flex:1;">
-                        <div class="time-input" style="flex:1.5;">
-                            <input type="number" id="r_dryM" placeholder="分"><span class="time-label">m</span>
-                            <input type="number" id="r_dryS" placeholder="秒"><span class="time-label">s</span>
-                        </div>
-                    </div>
-                </div>
-                <div><label>一爆點 (℃ / 時間)</label>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        <input type="number" id="r_fcT" placeholder="度" style="flex:1;">
-                        <div class="time-input" style="flex:1.5;">
-                            <input type="number" id="r_fcM" placeholder="分"><span class="time-label">m</span>
-                            <input type="number" id="r_fcS" placeholder="秒"><span class="time-label">s</span>
-                        </div>
-                    </div>
-                </div>
-                <div><label>下豆溫 (℃ / 時間)</label>
-                    <div style="display:flex; gap:4px; align-items:center;">
-                        <input type="number" id="r_dropT" placeholder="度" style="flex:1;">
-                        <div class="time-input" style="flex:1.5;">
-                            <input type="number" id="r_dropM" placeholder="分"><span class="time-label">m</span>
-                            <input type="number" id="r_dropS" placeholder="秒"><span class="time-label">s</span>
-                        </div>
-                    </div>
-                </div>
+                <div><label>回溫點 (℃/分:秒)</label><div style="display:flex;gap:3px;"><input type="number" id="r_tpT"><input type="number" id="r_tpM" placeholder="分"><input type="number" id="r_tpS" placeholder="秒"></div></div>
+                <div><label>轉黃點 (℃/分:秒)</label><div style="display:flex;gap:3px;"><input type="number" id="r_dryT"><input type="number" id="r_dryM" placeholder="分"><input type="number" id="r_dryS" placeholder="秒"></div></div>
+                <div><label>一爆點 (℃/分:秒)</label><div style="display:flex;gap:3px;"><input type="number" id="r_fcT"><input type="number" id="r_fcM" placeholder="分"><input type="number" id="r_fcS" placeholder="秒"></div></div>
+                <div><label>下豆溫 (℃/分:秒)</label><div style="display:flex;gap:3px;"><input type="number" id="r_dropT"><input type="number" id="r_dropM" placeholder="分"><input type="number" id="r_dropS" placeholder="秒"></div></div>
                 <div><label>生豆重 (g)</label><input type="number" id="r_wIn" value="150"></div>
                 <div><label>熟豆重 (g)</label><input type="number" id="r_wOut"></div>
             </div>
-            <button id="btn-save-roast" onclick="saveRoast()">🔥 儲存烘焙數據</button>
+            <button id="btn-save-roast" onclick="saveRoast()">🔥 儲存烘焙並更新曲線</button>
         </div>
         <canvas id="roastChart"></canvas>
-        <div id="roastHistory"></div>
+        <div class="history-section" id="roastHistory"></div>
     </div>
 
     <div id="tab-sales" class="tab-content">
@@ -117,13 +84,13 @@
             <label>選擇批次</label><select id="s_roastSelect" style="margin-bottom:12px;"></select>
             <div class="grid">
                 <div><label>出貨日期</label><input type="date" id="s_date"></div>
-                <div><label>出貨重量 (g)</label><input type="number" id="s_weight"></div>
+                <div><label>重量 (g)</label><input type="number" id="s_weight"></div>
                 <div><label>售價 (HKD)</label><input type="number" id="s_price"></div>
                 <div><label>買家/備註</label><input type="text" id="s_buyer"></div>
             </div>
             <button id="btn-save-sale" onclick="saveSale()">💰 儲存出貨</button>
         </div>
-        <div id="salesHistory"></div>
+        <div class="history-section" id="salesHistory"></div>
     </div>
 
     <div class="nav-bar">
@@ -153,23 +120,39 @@
     function toSec(m, s) { return (parseInt(m)||0)*60 + (parseInt(s)||0); }
     function fromSec(total) { return { m: Math.floor(total/60), s: total%60 }; }
 
+    function saveBean() {
+        const id = document.getElementById('b_id').value;
+        const bean = {
+            id: id ? parseInt(id) : Date.now(),
+            origin: document.getElementById('b_origin').value,
+            estate: document.getElementById('b_estate').value,
+            cost: document.getElementById('b_cost').value,
+            process: document.getElementById('b_process').value
+        };
+        if(!bean.origin || !bean.estate) return alert("請填寫產地及莊園");
+        if(id) db.beans = db.beans.map(b => b.id === bean.id ? bean : b);
+        else db.beans.unshift(bean);
+        localStorage.setItem('coffee_beans', JSON.stringify(db.beans));
+        document.getElementById('b_id').value = "";
+        refreshAll();
+    }
+
     function saveRoast() {
         const id = document.getElementById('r_id').value;
-        const beanId = document.getElementById('r_beanSelect').value;
-        const bean = db.beans.find(b => b.id == beanId);
+        const bId = document.getElementById('r_beanSelect').value;
+        const bean = db.beans.find(b => b.id == bId);
         const wIn = parseFloat(document.getElementById('r_wIn').value);
         const wOut = parseFloat(document.getElementById('r_wOut').value);
         
         const roast = {
             id: id ? parseInt(id) : Date.now(),
             batchNo: document.getElementById('r_batchNo').value,
-            beanId: beanId,
-            beanTitle: bean ? bean.title : "未知",
+            beanId: bId,
+            beanTitle: bean ? (bean.origin + " " + bean.estate) : "未知",
             costPerG: bean ? (bean.cost / 1000) : 0,
             date: document.getElementById('r_date').value,
             loss: ((wIn - wOut) / wIn * 100).toFixed(2),
             chargeT: document.getElementById('r_chargeT').value,
-            // 儲存總秒數，方便繪圖
             tp: [toSec(document.getElementById('r_tpM').value, document.getElementById('r_tpS').value), document.getElementById('r_tpT').value],
             dry: [toSec(document.getElementById('r_dryM').value, document.getElementById('r_dryS').value), document.getElementById('r_dryT').value],
             fc: [toSec(document.getElementById('r_fcM').value, document.getElementById('r_fcS').value), document.getElementById('r_fcT').value],
@@ -181,7 +164,9 @@
         else db.roasts.unshift(roast);
 
         localStorage.setItem('coffee_roasts', JSON.stringify(db.roasts));
-        resetForm('r'); refreshAll(); updateChart();
+        document.getElementById('r_id').value = "";
+        refreshAll();
+        updateChart();
     }
 
     function updateChart() {
@@ -194,8 +179,7 @@
             data: {
                 labels: [0, r.tp[0], r.dry[0], r.fc[0], r.drop[0]],
                 datasets: [{ label: 'Temp Curve', data: [r.chargeT, r.tp[1], r.dry[1], r.fc[1], r.drop[1]], borderColor: '#6F4E37', tension: 0.3 }]
-            },
-            options: { scales: { x: { title: { display: true, text: 'Seconds' } } } }
+            }
         });
     }
 
@@ -203,33 +187,46 @@
         const id = document.getElementById('s_id').value;
         const rId = document.getElementById('s_roastSelect').value;
         const r = db.roasts.find(x => x.id == rId);
-        const weight = parseFloat(document.getElementById('s_weight').value);
-        const price = parseFloat(document.getElementById('s_price').value);
+        if(!r) return alert("請先選擇烘焙批次");
+        const w = parseFloat(document.getElementById('s_weight').value);
+        const p = parseFloat(document.getElementById('s_price').value);
         const costRoasted = r.costPerG / ((100-r.loss)/100);
-        const sale = { 
-            id: id?parseInt(id):Date.now(), roastId: rId, batchNo: r.batchNo, 
-            beanTitle: r.beanTitle, buyer: document.getElementById('s_buyer').value, 
-            price: price, weight: weight, profit: (price - (costRoasted*weight)).toFixed(1), 
-            date: document.getElementById('s_date').value 
+        const sale = {
+            id: id ? parseInt(id) : Date.now(),
+            roastId: rId, batchNo: r.batchNo, beanTitle: r.beanTitle,
+            buyer: document.getElementById('s_buyer').value,
+            price: p, weight: w, profit: (p - (costRoasted*w)).toFixed(1),
+            date: document.getElementById('s_date').value
         };
         if(id) db.sales = db.sales.map(s => s.id === sale.id ? sale : s);
         else db.sales.unshift(sale);
         localStorage.setItem('coffee_sales', JSON.stringify(db.sales));
-        resetForm('s'); refreshAll();
+        document.getElementById('s_id').value = "";
+        refreshAll();
     }
 
     function refreshAll() {
-        document.getElementById('r_beanSelect').innerHTML = db.beans.map(b => `<option value="${b.id}">${b.title}</option>`).join('');
+        // 更新下拉選單
+        document.getElementById('r_beanSelect').innerHTML = db.beans.map(b => `<option value="${b.id}">${b.origin} ${b.estate}</option>`).join('');
         document.getElementById('s_roastSelect').innerHTML = db.roasts.map(r => `<option value="${r.id}">[${r.batchNo}] ${r.beanTitle}</option>`).join('');
 
+        // 渲染列表
+        document.getElementById('beanHistory').innerHTML = db.beans.map(b => `
+            <div class="item-card" onclick="this.querySelector('.details').classList.toggle('show')">
+                <div class="item-row"><b>${b.origin} - ${b.estate}</b><span>$${b.cost}/kg</span></div>
+                <div class="details">處理法: ${b.process}
+                    <div class="action-btns"><button class="btn-sm btn-edit" onclick="editBean(${b.id}, event)">改</button><button class="btn-sm btn-del" onclick="deleteItem('beans', ${b.id}, event)">刪</button></div>
+                </div>
+            </div>`).join('');
+
         document.getElementById('roastHistory').innerHTML = db.roasts.map(r => {
-            const tpTime = fromSec(r.tp[0]), dryTime = fromSec(r.dry[0]), fcTime = fromSec(r.fc[0]), dropTime = fromSec(r.drop[0]);
+            const tp = fromSec(r.tp[0]), dry = fromSec(r.dry[0]), fc = fromSec(r.fc[0]), drop = fromSec(r.drop[0]);
             return `<div class="item-card" onclick="this.querySelector('.details').classList.toggle('show')">
                 <div class="item-row"><span class="batch-no"># ${r.batchNo}</span><span>${r.date}</span></div>
                 <div class="item-row"><b>${r.beanTitle}</b><span>失重: ${r.loss}%</span></div>
                 <div class="details">
-                    回溫: ${r.tp[1]}℃ (${tpTime.m}m${tpTime.s}s) | 轉黃: ${r.dry[1]}℃ (${dryTime.m}m${dryTime.s}s)<br>
-                    一爆: ${r.fc[1]}℃ (${fcTime.m}m${fcTime.s}s) | 下豆: ${r.drop[1]}℃ (${dropTime.m}m${dropTime.s}s)
+                    入豆: ${r.chargeT}℃ | 下豆: ${r.drop[1]}℃ (${drop.m}m${drop.s}s)<br>
+                    回溫: ${r.tp[1]}℃ (${tp.m}m${tp.s}s) | 一爆: ${r.fc[1]}℃ (${fc.m}m${fc.s}s)
                     <div class="action-btns"><button class="btn-sm btn-edit" onclick="editRoast(${r.id}, event)">改</button><button class="btn-sm btn-del" onclick="deleteItem('roasts', ${r.id}, event)">刪</button></div>
                 </div>
             </div>`;
@@ -238,31 +235,29 @@
         document.getElementById('salesHistory').innerHTML = db.sales.map(s => `
             <div class="item-card" onclick="this.querySelector('.details').classList.toggle('show')">
                 <div class="item-row"><b>${s.buyer}</b><span class="profit">+$${s.profit}</span></div>
-                <div class="details">日期: ${s.date} | 重量: ${s.weight}g<br>售價: $${s.price} (${s.batchNo})
+                <div class="details">日期: ${s.date} | 重: ${s.weight}g | 價: $${s.price}<br>批次: ${s.batchNo}
                     <div class="action-btns"><button class="btn-sm btn-edit" onclick="editSale(${s.id}, event)">改</button><button class="btn-sm btn-del" onclick="deleteItem('sales', ${s.id}, event)">刪</button></div>
-                </div>
-            </div>`).join('');
-            
-        document.getElementById('beanHistory').innerHTML = db.beans.map(b => `
-            <div class="item-card" onclick="this.querySelector('.details').classList.toggle('show')">
-                <div class="item-row"><b>${b.title}</b><span>$${b.cost}/kg</span></div>
-                <div class="details">處理法: ${b.process}
-                    <div class="action-btns"><button class="btn-sm btn-edit" onclick="editBean(${b.id}, event)">改</button><button class="btn-sm btn-del" onclick="deleteItem('beans', ${b.id}, event)">刪</button></div>
                 </div>
             </div>`).join('');
     }
 
+    function editBean(id, e) {
+        e.stopPropagation(); const b = db.beans.find(x => x.id === id);
+        document.getElementById('b_id').value = b.id; document.getElementById('b_origin').value = b.origin;
+        document.getElementById('b_estate').value = b.estate; document.getElementById('b_process').value = b.process;
+        document.getElementById('b_cost').value = b.cost;
+    }
+
     function editRoast(id, e) {
         e.stopPropagation(); const r = db.roasts.find(x => x.id === id);
-        const t=fromSec(r.tp[0]), d=fromSec(r.dry[0]), f=fromSec(r.fc[0]), dr=fromSec(r.drop[0]);
+        const tp=fromSec(r.tp[0]), dry=fromSec(r.dry[0]), fc=fromSec(r.fc[0]), drop=fromSec(r.drop[0]);
         document.getElementById('r_id').value = r.id; document.getElementById('r_batchNo').value = r.batchNo;
         document.getElementById('r_date').value = r.date; document.getElementById('r_chargeT').value = r.chargeT;
-        document.getElementById('r_tpM').value = t.m; document.getElementById('r_tpS').value = t.s; document.getElementById('r_tpT').value = r.tp[1];
-        document.getElementById('r_dryM').value = d.m; document.getElementById('r_dryS').value = d.s; document.getElementById('r_dryT').value = r.dry[1];
-        document.getElementById('r_fcM').value = f.m; document.getElementById('r_fcS').value = f.s; document.getElementById('r_fcT').value = r.fc[1];
-        document.getElementById('r_dropM').value = dr.m; document.getElementById('r_dropS').value = dr.s; document.getElementById('r_dropT').value = r.drop[1];
+        document.getElementById('r_tpM').value = tp.m; document.getElementById('r_tpS').value = tp.s; document.getElementById('r_tpT').value = r.tp[1];
+        document.getElementById('r_dryM').value = dry.m; document.getElementById('r_dryS').value = dry.s; document.getElementById('r_dryT').value = r.dry[1];
+        document.getElementById('r_fcM').value = fc.m; document.getElementById('r_fcS').value = fc.s; document.getElementById('r_fcT').value = r.fc[1];
+        document.getElementById('r_dropM').value = drop.m; document.getElementById('r_dropS').value = drop.s; document.getElementById('r_dropT').value = r.drop[1];
         document.getElementById('r_wIn').value = r.wIn; document.getElementById('r_wOut').value = r.wOut;
-        document.getElementById('btn-save-roast').innerText = "🆙 更新紀錄"; window.scrollTo(0,0);
     }
 
     function editSale(id, e) {
@@ -270,24 +265,23 @@
         document.getElementById('s_id').value = s.id; document.getElementById('s_date').value = s.date;
         document.getElementById('s_weight').value = s.weight; document.getElementById('s_price').value = s.price;
         document.getElementById('s_buyer').value = s.buyer; document.getElementById('s_roastSelect').value = s.roastId;
-        document.getElementById('btn-save-sale').innerText = "🆙 更新紀錄"; window.scrollTo(0,0);
-    }
-
-    function editBean(id, e) {
-        e.stopPropagation(); const b = db.beans.find(x => x.id === id);
-        document.getElementById('b_id').value = b.id; document.getElementById('b_title').value = b.title;
-        document.getElementById('b_process').value = b.process; document.getElementById('b_cost').value = b.cost;
-        document.getElementById('btn-save-bean').innerText = "🆙 更新生豆"; window.scrollTo(0,0);
     }
 
     function deleteItem(type, id, e) { e.stopPropagation(); if(confirm("確定刪除？")){ db[type]=db[type].filter(i=>i.id!==id); localStorage.setItem('coffee_'+type, JSON.stringify(db[type])); refreshAll(); } }
-    function resetForm(p) { document.getElementById(p+'_id').value=""; const b=document.getElementById('btn-save-'+(p==='b'?'bean':p==='r'?'roast':'sale')); b.innerText=p==='b'?'💾 儲存生豆':p==='r'?'🔥 儲存烘焙':'💰 儲存出貨'; }
-    function exportCSV(t) { let d=db[t]; if(!d.length)return; let c="\uFEFF"+Object.keys(d[0]).join(",")+"\n"; d.forEach(i=>{c+=Object.values(i).map(v=>`"${v}"`).join(",")+"\n"}); const l=document.createElement("a"); l.href=URL.createObjectURL(new Blob([c],{type:'text/csv'})); l.download=`UncleSam_${t}.csv`; l.click(); }
+    
+    function exportCSV(t) { 
+        let d=db[t]; if(!d.length) return;
+        let c="\uFEFF"+Object.keys(d[0]).join(",")+"\n";
+        d.forEach(i=>{c+=Object.values(i).map(v=>`"${v}"`).join(",")+"\n"});
+        const l=document.createElement("a");
+        l.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));
+        l.download=`UncleSam_${t}.csv`; l.click();
+    }
 
-    window.onload = () => { 
-        document.getElementById('r_date').valueAsDate = new Date(); 
+    window.onload = () => {
+        document.getElementById('r_date').valueAsDate = new Date();
         document.getElementById('s_date').valueAsDate = new Date();
-        refreshAll(); 
+        refreshAll();
     };
 </script>
 </body>
