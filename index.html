@@ -35,7 +35,6 @@
 </head>
 <body>
 
-    <!-- 生豆分頁 -->
     <div id="tab-beans" class="tab-content active-content">
         <h2>🌱 生豆庫存</h2>
         <div class="card">
@@ -55,7 +54,6 @@
         <div id="beanList"></div>
     </div>
 
-    <!-- 烘焙分頁 -->
     <div id="tab-roast" class="tab-content">
         <h2>🔥 烘焙紀錄</h2>
         <div class="card">
@@ -88,7 +86,6 @@
         <div id="roastList"></div>
     </div>
 
-    <!-- 出貨分頁 -->
     <div id="tab-sales" class="tab-content">
         <h2>💰 出貨紀錄</h2>
         <div class="card">
@@ -155,9 +152,19 @@
         const id = document.getElementById('r_id').value || Date.now();
         const bId = document.getElementById('r_beanSelect').value;
         const bean = db.beans.find(b => b.id == bId);
-        const wIn = document.getElementById('r_wIn').value || 1;
-        const wOut = document.getElementById('r_wOut').value || 1;
+        const wIn = parseFloat(document.getElementById('r_wIn').value) || 1;
+        const wOut = parseFloat(document.getElementById('r_wOut').value) || 1;
         
+        // 發展比例計算
+        const mDrop = parseInt(document.getElementById('r_m_drop').value) || 0;
+        const sDrop = parseInt(document.getElementById('r_s_drop').value) || 0;
+        const mDev = parseInt(document.getElementById('r_m_dev').value) || 0;
+        const sDev = parseInt(document.getElementById('r_s_dev').value) || 0;
+        
+        const totalSec = (mDrop * 60) + sDrop;
+        const devSec = (mDev * 60) + sDev;
+        const devRatio = totalSec > 0 ? ((devSec / totalSec) * 100).toFixed(1) : 0;
+
         const data = {
             id: parseInt(id),
             beanId: bId,
@@ -170,8 +177,9 @@
             t_tp: document.getElementById('r_t_tp').value,
             t_dry: document.getElementById('r_t_dry').value, m_dry: document.getElementById('r_m_dry').value, s_dry: document.getElementById('r_s_dry').value,
             t_fc: document.getElementById('r_t_fc').value, m_fc: document.getElementById('r_m_fc').value, s_fc: document.getElementById('r_s_fc').value,
-            t_drop: document.getElementById('r_t_drop').value, m_drop: document.getElementById('r_m_drop').value, s_drop: document.getElementById('r_s_drop').value,
-            m_dev: document.getElementById('r_m_dev').value, s_dev: document.getElementById('r_s_dev').value,
+            t_drop: document.getElementById('r_t_drop').value, m_drop: mDrop, s_drop: sDrop,
+            m_dev: mDev, s_dev: sDev,
+            devRatio: devRatio,
             costPerG: bean ? (bean.cost / 1000) : 0
         };
         const idx = db.roasts.findIndex(r => r.id == id);
@@ -208,20 +216,14 @@
     }
 
     function render() {
-        // 下拉選單增加豐富資訊
         const beanOptions = db.beans.map(b => `<option value="${b.id}">${b.origin} ${b.estate} (${b.flavor})</option>`).join('');
         document.getElementById('r_beanSelect').innerHTML = beanOptions;
-        
         document.getElementById('s_roastSelect').innerHTML = db.roasts.map(r => `<option value="${r.id}">[#${r.batchNo}] ${r.beanTitle}</option>`).join('');
 
-        // 生豆列表顯示處理法
         document.getElementById('beanList').innerHTML = db.beans.map(b => `
             <div class="item-card">
                 <div class="item-main" onclick="toggleAction('b${b.id}')">
-                    <div class="item-title">
-                        ${b.origin} ${b.estate}
-                        <span class="badge">${b.process || '處理法未填'}</span>
-                    </div>
+                    <div class="item-title">${b.origin} ${b.estate} <span class="badge">${b.process || ''}</span></div>
                     <div class="item-sub">風味：${b.flavor}<br>支出：<b>$${b.expense}</b> ($${b.cost}/kg) | ${b.date}</div>
                 </div>
                 <div class="action-area" id="action-b${b.id}">
@@ -230,18 +232,14 @@
                 </div>
             </div>`).join('');
 
-        // 烘焙列表增加發展時間顯示
         document.getElementById('roastList').innerHTML = db.roasts.map(r => `
             <div class="item-card">
                 <div class="item-main" onclick="toggleAction('r${r.id}')">
-                    <div class="item-title">
-                        #${r.batchNo} ${r.beanTitle} 
-                        <span style="font-size:12px; color:var(--primary)">失重 ${r.loss}%</span>
-                    </div>
+                    <div class="item-title">#${r.batchNo} ${r.beanTitle} <span style="font-size:12px; color:var(--primary)">失重 ${r.loss}%</span></div>
                     <div class="item-sub">日期：${r.date} | ${r.wIn}g -> ${r.wOut}g<br>
                         回溫：${r.t_tp}℃ | 轉黃：${r.t_dry}℃ (${r.m_dry}:${r.s_dry})<br>
                         一爆：${r.t_fc}℃ (${r.m_fc}:${r.s_fc}) | 下豆：${r.t_drop}℃ (${r.m_drop}:${r.s_drop})<br>
-                        <b style="color:#d35400;">發展時間：${r.m_dev || 0}分 ${r.s_dev || 0}秒</b>
+                        發展時間：${r.m_dev || 0}分 ${r.s_dev || 0}秒 (<b>${r.devRatio || 0}%</b>)
                     </div>
                 </div>
                 <div class="action-area" id="action-r${r.id}">
