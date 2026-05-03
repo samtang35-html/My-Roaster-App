@@ -22,7 +22,7 @@
         
         .item-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid var(--primary); transition: all 0.3s; }
         .item-main { cursor: pointer; }
-        .item-title { font-weight: bold; font-size: 16px; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .item-title { font-weight: bold; font-size: 16px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: flex-start; }
         .item-sub { color: #666; font-size: 13px; line-height: 1.5; }
         .action-area { display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #eee; gap: 10px; }
         .action-area.show { display: flex; }
@@ -30,6 +30,7 @@
         .btn-edit { background: var(--edit); }
         .btn-del { background: var(--del); }
         .profit-tag { color: #2ecc71; font-weight: bold; }
+        .badge { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: normal; color: #555; }
     </style>
 </head>
 <body>
@@ -42,11 +43,12 @@
             <div class="grid">
                 <div><label>產地</label><input type="text" id="b_origin"></div>
                 <div><label>莊園</label><input type="text" id="b_estate"></div>
+                <div><label>處理方法</label><input type="text" id="b_process" placeholder="例如: 日曬, 水洗"></div>
+                <div><label>入貨日期</label><input type="date" id="b_date"></div>
                 <div style="grid-column: span 2;"><label>風味描述</label><input type="text" id="b_flavor"></div>
                 <div><label>成本 (HKD/kg)</label><input type="number" id="b_cost" oninput="calcExp()"></div>
-                <div><label>入貨重量 (kg)</label><input type="number" id="b_weight" oninput="calcExp()"></div>
-                <div><label>總支出</label><input type="number" id="b_expense" readonly></div>
-                <div><label>入貨日期</label><input type="date" id="b_date"></div>
+                <div><label>重量 (kg)</label><input type="number" id="b_weight" oninput="calcExp()"></div>
+                <div style="grid-column: span 2;"><label>總支出</label><input type="number" id="b_expense" readonly></div>
             </div>
             <button class="main-btn" onclick="saveBean()">儲存生豆資料</button>
         </div>
@@ -136,6 +138,7 @@
             id: parseInt(id),
             origin: document.getElementById('b_origin').value,
             estate: document.getElementById('b_estate').value,
+            process: document.getElementById('b_process').value,
             flavor: document.getElementById('b_flavor').value,
             cost: document.getElementById('b_cost').value,
             weight: document.getElementById('b_weight').value,
@@ -145,7 +148,7 @@
         const idx = db.beans.findIndex(b => b.id == id);
         if(idx > -1) db.beans[idx] = data; else db.beans.unshift(data);
         localStorage.setItem('coffee_beans', JSON.stringify(db.beans));
-        location.reload(); // 重整以清除輸入框並更新列表
+        location.reload();
     }
 
     function saveRoast() {
@@ -165,7 +168,6 @@
             loss: ((wIn - wOut) / wIn * 100).toFixed(1),
             t_charge: document.getElementById('r_t_charge').value,
             t_tp: document.getElementById('r_t_tp').value,
-            // 時間數據
             t_dry: document.getElementById('r_t_dry').value, m_dry: document.getElementById('r_m_dry').value, s_dry: document.getElementById('r_s_dry').value,
             t_fc: document.getElementById('r_t_fc').value, m_fc: document.getElementById('r_m_fc').value, s_fc: document.getElementById('r_s_fc').value,
             t_drop: document.getElementById('r_t_drop').value, m_drop: document.getElementById('r_m_drop').value, s_drop: document.getElementById('r_s_drop').value,
@@ -201,17 +203,25 @@
         document.querySelectorAll('.action-area').forEach(el => {
             if(el.id !== 'action-' + id) el.classList.remove('show');
         });
-        document.getElementById('action-' + id).classList.toggle('show');
+        const target = document.getElementById('action-' + id);
+        if(target) target.classList.toggle('show');
     }
 
     function render() {
-        document.getElementById('r_beanSelect').innerHTML = db.beans.map(b => `<option value="${b.id}">${b.origin} ${b.estate}</option>`).join('');
+        // 下拉選單增加豐富資訊
+        const beanOptions = db.beans.map(b => `<option value="${b.id}">${b.origin} ${b.estate} (${b.flavor})</option>`).join('');
+        document.getElementById('r_beanSelect').innerHTML = beanOptions;
+        
         document.getElementById('s_roastSelect').innerHTML = db.roasts.map(r => `<option value="${r.id}">[#${r.batchNo}] ${r.beanTitle}</option>`).join('');
 
+        // 生豆列表顯示處理法
         document.getElementById('beanList').innerHTML = db.beans.map(b => `
             <div class="item-card">
                 <div class="item-main" onclick="toggleAction('b${b.id}')">
-                    <div class="item-title">${b.origin} ${b.estate}</div>
+                    <div class="item-title">
+                        ${b.origin} ${b.estate}
+                        <span class="badge">${b.process || '處理法未填'}</span>
+                    </div>
                     <div class="item-sub">風味：${b.flavor}<br>支出：<b>$${b.expense}</b> ($${b.cost}/kg) | ${b.date}</div>
                 </div>
                 <div class="action-area" id="action-b${b.id}">
@@ -220,13 +230,18 @@
                 </div>
             </div>`).join('');
 
+        // 烘焙列表增加發展時間顯示
         document.getElementById('roastList').innerHTML = db.roasts.map(r => `
             <div class="item-card">
                 <div class="item-main" onclick="toggleAction('r${r.id}')">
-                    <div class="item-title">#${r.batchNo} ${r.beanTitle} <span style="font-size:12px; color:var(--primary)">失重 ${r.loss}%</span></div>
+                    <div class="item-title">
+                        #${r.batchNo} ${r.beanTitle} 
+                        <span style="font-size:12px; color:var(--primary)">失重 ${r.loss}%</span>
+                    </div>
                     <div class="item-sub">日期：${r.date} | ${r.wIn}g -> ${r.wOut}g<br>
                         回溫：${r.t_tp}℃ | 轉黃：${r.t_dry}℃ (${r.m_dry}:${r.s_dry})<br>
-                        一爆：${r.t_fc}℃ (${r.m_fc}:${r.s_fc}) | 下豆：${r.t_drop}℃ (${r.m_drop}:${r.s_drop})
+                        一爆：${r.t_fc}℃ (${r.m_fc}:${r.s_fc}) | 下豆：${r.t_drop}℃ (${r.m_drop}:${r.s_drop})<br>
+                        <b style="color:#d35400;">發展時間：${r.m_dev || 0}分 ${r.s_dev || 0}秒</b>
                     </div>
                 </div>
                 <div class="action-area" id="action-r${r.id}">
@@ -250,15 +265,15 @@
 
     function editBean(id) {
         const b = db.beans.find(x => x.id == id);
-        const fields = ['id','origin','estate','flavor','cost','weight','expense','date'];
-        fields.forEach(f => document.getElementById('b_'+f).value = b[f]);
+        const fields = ['id','origin','estate','process','flavor','cost','weight','expense','date'];
+        fields.forEach(f => document.getElementById('b_'+f).value = b[f] || "");
         window.scrollTo(0,0);
     }
 
     function editRoast(id) {
         const r = db.roasts.find(x => x.id == id);
         const fields = ['id','batchNo','date','wIn','wOut','t_charge','t_tp','t_dry','m_dry','s_dry','t_fc','m_fc','s_fc','t_drop','m_drop','s_drop','m_dev','s_dev'];
-        fields.forEach(f => document.getElementById('r_'+f).value = r[f]);
+        fields.forEach(f => document.getElementById('r_'+f).value = r[f] || "");
         document.getElementById('r_beanSelect').value = r.beanId;
         window.scrollTo(0,0);
     }
@@ -266,7 +281,7 @@
     function editSale(id) {
         const s = db.sales.find(x => x.id == id);
         const fields = ['id','buyer','date','weight','price'];
-        fields.forEach(f => document.getElementById('s_'+f).value = s[f]);
+        fields.forEach(f => document.getElementById('s_'+f).value = s[f] || "");
         document.getElementById('s_roastSelect').value = s.roastId;
         window.scrollTo(0,0);
     }
@@ -275,7 +290,10 @@
 
     window.onload = () => {
         const today = new Date().toISOString().split('T')[0];
-        ['b_date','r_date','s_date'].forEach(id => document.getElementById(id).value = today);
+        ['b_date','r_date','s_date'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = today;
+        });
         render();
     };
 </script>
