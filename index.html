@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Uncle Sam Roaster Log</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #6F4E37; --secondary: #ECB176; --bg: #FED8B1; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; }
+        h2 { color: var(--primary); border-left: 5px solid var(--primary); padding-left: 10px; }
+        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .input-group { margin-bottom: 10px; }
+        label { display: block; font-size: 12px; color: #666; margin-bottom: 3px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 10px; }
+        canvas { background: #fff; border-radius: 10px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>☕ 豆資訊 (Green Bean)</h2>
+    <div class="card grid">
+        <div class="input-group">
+            <label>產地/莊園</label>
+            <input type="text" id="origin" placeholder="例如：衣索比亞 74158">
+        </div>
+        <div class="input-group">
+            <label>供應商</label>
+            <input type="text" id="supplier" placeholder="供應商名稱">
+        </div>
+        <div class="input-group">
+            <label>生豆含水量 (%)</label>
+            <input type="number" id="moisture" step="0.1" placeholder="11.5">
+        </div>
+        <div class="input-group">
+            <label>進貨數量 (kg)</label>
+            <input type="number" id="stockQty" placeholder="5">
+        </div>
+    </div>
+
+    <h2>🔥 烘焙參數 (Roast Profile)</h2>
+    <div class="card">
+        <div class="grid">
+            <div class="input-group"><label>日期</label><input type="date" id="date"></div>
+            <div class="input-group"><label>入豆溫 (℃)</label><input type="number" id="chargeTemp"></div>
+            <div class="input-group"><label>回溫點 (TP)</label><input type="text" id="tp" placeholder="1'30 / 92℃"></div>
+            <div class="input-group"><label>轉黃點 (Dry)</label><input type="text" id="dryPhase"></div>
+            <div class="input-group"><label>一爆 (1st Crack)</label><input type="text" id="fc"></div>
+            <div class="input-group"><label>下豆溫 (Drop)</label><input type="number" id="dropTemp"></div>
+            <div class="input-group"><label>生豆重 (g)</label><input type="number" id="weightIn" value="150"></div>
+            <div class="input-group"><label>熟豆重 (g)</label><input type="number" id="weightOut"></div>
+        </div>
+        <div class="input-group" style="margin-top:10px;">
+            <label>失重率 (%)</label>
+            <input type="text" id="weightLoss" readonly style="background:#f0f0f0;">
+        </div>
+    </div>
+
+    <h2>💰 出貨紀錄 (Sales)</h2>
+    <div class="card grid">
+        <div class="input-group">
+            <label>售價 (HKD)</label>
+            <input type="number" id="price" placeholder="例如：120">
+        </div>
+        <div class="input-group">
+            <label>買家/備註</label>
+            <input type="text" id="buyer" placeholder="朋友 A / 網店">
+        </div>
+    </div>
+
+    <button onclick="saveData()">💾 儲存烘焙紀錄</button>
+
+    <canvas id="roastChart" width="400" height="250"></canvas>
+
+    <script>
+        // 設定今天日期
+        document.getElementById('date').valueAsDate = new Date();
+
+        // 自動計算失重率
+        function updateLoss() {
+            let win = document.getElementById('weightIn').value;
+            let wout = document.getElementById('weightOut').value;
+            if (win && wout) {
+                let loss = ((win - wout) / win * 100).toFixed(2);
+                document.getElementById('weightLoss').value = loss + " %";
+            }
+        }
+        document.getElementById('weightOut').oninput = updateLoss;
+
+        // 儲存邏輯 (簡單儲存到瀏覽器)
+        function saveData() {
+            const data = {
+                origin: document.getElementById('origin').value,
+                date: document.getElementById('date').value,
+                dropTemp: document.getElementById('dropTemp').value,
+                price: document.getElementById('price').value
+            };
+            alert("已成功記錄：" + data.origin + " (" + data.date + ")");
+            console.log("Saved Data:", data);
+            // 這裡可以延伸將資料 push 到一個 Array 並存入 localStorage
+        }
+
+        // 初始化一條示範曲線 (Chart.js)
+        const ctx = document.getElementById('roastChart').getContext('2d');
+        const roastChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['0', '2', '4', '6', '8', '10', '12'],
+                datasets: [{
+                    label: '烘焙溫度 (BT)',
+                    data: [200, 95, 120, 150, 180, 200, 215],
+                    borderColor: '#6F4E37',
+                    tension: 0.4
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+    </script>
+</body>
+</html>
