@@ -18,79 +18,84 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; font-weight: 600; }
         input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
-        .time-input { display: flex; align-items: center; gap: 2px; }
-        .time-input input { text-align: center; padding: 8px 4px; }
-        button { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; margin-top: 5px; }
+        button { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; margin-top: 5px; cursor: pointer; }
         .export-btn { background: #555; font-size: 11px; padding: 6px 12px; width: auto; margin: 0; border-radius: 20px; }
-        .history-section { margin-top: 10px; }
-        .item-card { background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .item-row { display: flex; justify-content: space-between; align-items: center; }
-        .details { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; font-size: 13px; color: #555; line-height: 1.6; }
-        .details.show { display: block; }
-        .action-btns { display: flex; gap: 8px; margin-top: 10px; justify-content: flex-end; }
-        .btn-sm { padding: 6px 12px; border-radius: 4px; font-size: 12px; color: white; border: none; }
+        
+        /* 紀錄卡片樣式 */
+        .item-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .item-header { display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; }
+        .batch-info b { font-size: 16px; color: #333; display: block; }
+        .batch-no { background: #f0ebe5; color: var(--primary); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        
+        .item-details { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+        .item-details.active { display: block; }
+        
+        .info-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; color: #555; }
+        .chart-container { margin-top: 15px; height: 200px; position: relative; }
+        
+        .action-btns { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-sm { padding: 8px; border-radius: 6px; font-size: 12px; flex: 1; border: none; color: white; cursor: pointer; text-align: center; }
         .btn-edit { background: var(--info); }
         .btn-del { background: var(--danger); }
-        .batch-no { color: var(--primary); font-weight: bold; background: #FFF3E0; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
-        .profit { color: #28a745; font-weight: bold; }
-        canvas { max-width: 100%; background: white; border-radius: 8px; margin-top: 10px; display: block; }
     </style>
 </head>
 <body>
 
+    <!-- 生豆頁面 -->
     <div id="tab-beans" class="tab-content active-content">
         <h2>🌱 生豆庫存 <button class="export-btn" onclick="exportCSV('beans')">匯出</button></h2>
         <div class="card">
             <input type="hidden" id="b_id">
             <div class="grid">
-                <div><label>產地 (國家/區域)</label><input type="text" id="b_origin"></div>
-                <div><label>莊園 / 批次名稱</label><input type="text" id="b_estate"></div>
-                <div><label>處理法</label><input type="text" id="b_process"></div>
+                <div><label>產地</label><input type="text" id="b_origin" placeholder="例如: 埃塞俄比亞"></div>
+                <div><label>莊園/名稱</label><input type="text" id="b_estate" placeholder="例如: 耶加雪菲"></div>
+                <div><label>處理法</label><input type="text" id="b_process" placeholder="日曬/水洗"></div>
                 <div><label>成本 (HKD/kg)</label><input type="number" id="b_cost"></div>
             </div>
-            <button id="btn-save-bean" onclick="saveBean()">💾 儲存生豆資料</button>
+            <button onclick="saveBean()">💾 儲存生豆資料</button>
         </div>
-        <div class="history-section" id="beanHistory"></div>
+        <div id="beanList"></div>
     </div>
 
+    <!-- 烘焙頁面 -->
     <div id="tab-roast" class="tab-content">
         <h2>🔥 烘焙紀錄 <button class="export-btn" onclick="exportCSV('roasts')">匯出</button></h2>
         <div class="card">
             <input type="hidden" id="r_id">
             <div class="grid">
                 <div style="grid-column: span 2;"><label>選擇生豆</label><select id="r_beanSelect"></select></div>
-                <div style="grid-column: span 2;"><label>批次編號</label><input type="text" id="r_batchNo"></div>
+                <div style="grid-column: span 2;"><label>批次編號</label><input type="text" id="r_batchNo" placeholder="例如: B001"></div>
                 <div><label>日期</label><input type="date" id="r_date"></div>
                 <div><label>入豆溫 (℃)</label><input type="number" id="r_chargeT"></div>
             </div>
             <div class="grid">
-                <div><label>回溫點 (℃/分:秒)</label><div style="display:flex;gap:3px;"><input type="number" id="r_tpT"><input type="number" id="r_tpM" placeholder="分"><input type="number" id="r_tpS" placeholder="秒"></div></div>
-                <div><label>轉黃點 (℃/分:秒)</label><div style="display:flex;gap:3px;"><input type="number" id="r_dryT"><input type="number" id="r_dryM" placeholder="分"><input type="number" id="r_dryS" placeholder="秒"></div></div>
-                <div><label>一爆點 (℃/分:秒)</label><div style="display:flex;gap:3px;"><input type="number" id="r_fcT"><input type="number" id="r_fcM" placeholder="分"><input type="number" id="r_fcS" placeholder="秒"></div></div>
-                <div><label>下豆溫 (℃/分:秒)</label><div style="display:flex;gap:3px;"><input type="number" id="r_dropT"><input type="number" id="r_dropM" placeholder="分"><input type="number" id="r_dropS" placeholder="秒"></div></div>
+                <div><label>回溫點 (℃ / 分:秒)</label><div style="display:flex;gap:2px;"><input type="number" id="r_tpT" style="flex:1;"><input type="number" id="r_tpM" placeholder="m" style="flex:0.8;"><input type="number" id="r_tpS" placeholder="s" style="flex:0.8;"></div></div>
+                <div><label>轉黃點 (℃ / 分:秒)</label><div style="display:flex;gap:2px;"><input type="number" id="r_dryT" style="flex:1;"><input type="number" id="r_dryM" placeholder="m" style="flex:0.8;"><input type="number" id="r_dryS" placeholder="s" style="flex:0.8;"></div></div>
+                <div><label>一爆點 (℃ / 分:秒)</label><div style="display:flex;gap:2px;"><input type="number" id="r_fcT" style="flex:1;"><input type="number" id="r_fcM" placeholder="m" style="flex:0.8;"><input type="number" id="r_fcS" placeholder="s" style="flex:0.8;"></div></div>
+                <div><label>下豆溫 (℃ / 分:秒)</label><div style="display:flex;gap:2px;"><input type="number" id="r_dropT" style="flex:1;"><input type="number" id="r_dropM" placeholder="m" style="flex:0.8;"><input type="number" id="r_dropS" placeholder="s" style="flex:0.8;"></div></div>
                 <div><label>生豆重 (g)</label><input type="number" id="r_wIn" value="150"></div>
                 <div><label>熟豆重 (g)</label><input type="number" id="r_wOut"></div>
             </div>
-            <button id="btn-save-roast" onclick="saveRoast()">🔥 儲存烘焙並更新曲線</button>
+            <button id="btn-save-roast" onclick="saveRoast()">🔥 儲存烘焙紀錄</button>
         </div>
-        <canvas id="roastChart"></canvas>
-        <div class="history-section" id="roastHistory"></div>
+        <div id="roastList"></div>
     </div>
 
+    <!-- 出貨頁面 -->
     <div id="tab-sales" class="tab-content">
         <h2>💰 出貨盈利 <button class="export-btn" onclick="exportCSV('sales')">匯出</button></h2>
         <div class="card">
             <input type="hidden" id="s_id">
-            <label>選擇批次</label><select id="s_roastSelect" style="margin-bottom:12px;"></select>
+            <label>選擇烘焙批次</label><select id="s_roastSelect" style="margin-bottom:12px;"></select>
             <div class="grid">
                 <div><label>出貨日期</label><input type="date" id="s_date"></div>
-                <div><label>重量 (g)</label><input type="number" id="s_weight"></div>
+                <div><label>出貨重量 (g)</label><input type="number" id="s_weight"></div>
                 <div><label>售價 (HKD)</label><input type="number" id="s_price"></div>
                 <div><label>買家/備註</label><input type="text" id="s_buyer"></div>
             </div>
-            <button id="btn-save-sale" onclick="saveSale()">💰 儲存出貨</button>
+            <button onclick="saveSale()">💰 儲存出貨</button>
         </div>
-        <div class="history-section" id="salesHistory"></div>
+        <div id="salesList"></div>
     </div>
 
     <div class="nav-bar">
@@ -106,37 +111,35 @@
         sales: JSON.parse(localStorage.getItem('coffee_sales') || '[]')
     };
 
-    let myChart = null;
-
     function showTab(name) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active-content'));
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         document.getElementById('tab-' + name).classList.add('active-content');
         event.currentTarget.classList.add('active');
         refreshAll();
-        if(name === 'roast') updateChart();
     }
 
     function toSec(m, s) { return (parseInt(m)||0)*60 + (parseInt(s)||0); }
     function fromSec(total) { return { m: Math.floor(total/60), s: total%60 }; }
 
+    // --- 生豆邏輯 ---
     function saveBean() {
         const id = document.getElementById('b_id').value;
         const bean = {
             id: id ? parseInt(id) : Date.now(),
             origin: document.getElementById('b_origin').value,
             estate: document.getElementById('b_estate').value,
-            cost: document.getElementById('b_cost').value,
-            process: document.getElementById('b_process').value
+            process: document.getElementById('b_process').value,
+            cost: document.getElementById('b_cost').value
         };
-        if(!bean.origin || !bean.estate) return alert("請填寫產地及莊園");
+        if(!bean.origin || !bean.estate) return alert("請輸入生豆資訊");
         if(id) db.beans = db.beans.map(b => b.id === bean.id ? bean : b);
         else db.beans.unshift(bean);
-        localStorage.setItem('coffee_beans', JSON.stringify(db.beans));
-        document.getElementById('b_id').value = "";
-        refreshAll();
+        saveAndRefresh('beans');
+        clearForm('b');
     }
 
+    // --- 烘焙邏輯 ---
     function saveRoast() {
         const id = document.getElementById('r_id').value;
         const bId = document.getElementById('r_beanSelect').value;
@@ -148,7 +151,7 @@
             id: id ? parseInt(id) : Date.now(),
             batchNo: document.getElementById('r_batchNo').value,
             beanId: bId,
-            beanTitle: bean ? (bean.origin + " " + bean.estate) : "未知",
+            beanTitle: bean ? `${bean.origin} ${bean.estate}` : "未知",
             costPerG: bean ? (bean.cost / 1000) : 0,
             date: document.getElementById('r_date').value,
             loss: ((wIn - wOut) / wIn * 100).toFixed(2),
@@ -162,47 +165,41 @@
 
         if(id) db.roasts = db.roasts.map(r => r.id === roast.id ? roast : r);
         else db.roasts.unshift(roast);
-
-        localStorage.setItem('coffee_roasts', JSON.stringify(db.roasts));
-        document.getElementById('r_id').value = "";
-        refreshAll();
-        updateChart();
+        saveAndRefresh('roasts');
+        clearForm('r');
     }
 
-    function updateChart() {
-        if(db.roasts.length === 0) return;
-        const r = db.roasts[0];
-        const ctx = document.getElementById('roastChart').getContext('2d');
-        if(myChart) myChart.destroy();
-        myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [0, r.tp[0], r.dry[0], r.fc[0], r.drop[0]],
-                datasets: [{ label: 'Temp Curve', data: [r.chargeT, r.tp[1], r.dry[1], r.fc[1], r.drop[1]], borderColor: '#6F4E37', tension: 0.3 }]
-            }
-        });
-    }
-
+    // --- 出貨邏輯 ---
     function saveSale() {
         const id = document.getElementById('s_id').value;
         const rId = document.getElementById('s_roastSelect').value;
         const r = db.roasts.find(x => x.id == rId);
-        if(!r) return alert("請先選擇烘焙批次");
-        const w = parseFloat(document.getElementById('s_weight').value);
-        const p = parseFloat(document.getElementById('s_price').value);
+        if(!r) return alert("請先選擇批次");
+        const weight = parseFloat(document.getElementById('s_weight').value);
+        const price = parseFloat(document.getElementById('s_price').value);
         const costRoasted = r.costPerG / ((100-r.loss)/100);
         const sale = {
             id: id ? parseInt(id) : Date.now(),
             roastId: rId, batchNo: r.batchNo, beanTitle: r.beanTitle,
             buyer: document.getElementById('s_buyer').value,
-            price: p, weight: w, profit: (p - (costRoasted*w)).toFixed(1),
+            price: price, weight: weight, profit: (price - (costRoasted*weight)).toFixed(1),
             date: document.getElementById('s_date').value
         };
         if(id) db.sales = db.sales.map(s => s.id === sale.id ? sale : s);
         else db.sales.unshift(sale);
-        localStorage.setItem('coffee_sales', JSON.stringify(db.sales));
-        document.getElementById('s_id').value = "";
+        saveAndRefresh('sales');
+        clearForm('s');
+    }
+
+    // --- 通用功能 ---
+    function saveAndRefresh(type) {
+        localStorage.setItem('coffee_'+type, JSON.stringify(db[type]));
         refreshAll();
+    }
+
+    function clearForm(p) {
+        document.getElementById(p+'_id').value = "";
+        if(p==='r') document.getElementById('btn-save-roast').innerText = "🔥 儲存烘焙紀錄";
     }
 
     function refreshAll() {
@@ -210,65 +207,143 @@
         document.getElementById('r_beanSelect').innerHTML = db.beans.map(b => `<option value="${b.id}">${b.origin} ${b.estate}</option>`).join('');
         document.getElementById('s_roastSelect').innerHTML = db.roasts.map(r => `<option value="${r.id}">[${r.batchNo}] ${r.beanTitle}</option>`).join('');
 
-        // 渲染列表
-        document.getElementById('beanHistory').innerHTML = db.beans.map(b => `
-            <div class="item-card" onclick="this.querySelector('.details').classList.toggle('show')">
-                <div class="item-row"><b>${b.origin} - ${b.estate}</b><span>$${b.cost}/kg</span></div>
-                <div class="details">處理法: ${b.process}
-                    <div class="action-btns"><button class="btn-sm btn-edit" onclick="editBean(${b.id}, event)">改</button><button class="btn-sm btn-del" onclick="deleteItem('beans', ${b.id}, event)">刪</button></div>
+        // 1. 生豆列表
+        document.getElementById('beanList').innerHTML = db.beans.map(b => `
+            <div class="item-card">
+                <div class="item-header" onclick="toggleDetail(this)">
+                    <div class="batch-info"><b>${b.origin}</b><span>${b.estate} (${b.process})</span></div>
+                    <div style="text-align:right">HKD $${b.cost}/kg</div>
+                </div>
+                <div class="item-details">
+                    <div class="action-btns">
+                        <button class="btn-sm btn-edit" onclick="editBean(${b.id})">修改</button>
+                        <button class="btn-sm btn-del" onclick="deleteItem('beans', ${b.id})">刪除</button>
+                    </div>
                 </div>
             </div>`).join('');
 
-        document.getElementById('roastHistory').innerHTML = db.roasts.map(r => {
+        // 2. 烘焙列表 (帶曲線)
+        document.getElementById('roastList').innerHTML = db.roasts.map(r => {
             const tp = fromSec(r.tp[0]), dry = fromSec(r.dry[0]), fc = fromSec(r.fc[0]), drop = fromSec(r.drop[0]);
-            return `<div class="item-card" onclick="this.querySelector('.details').classList.toggle('show')">
-                <div class="item-row"><span class="batch-no"># ${r.batchNo}</span><span>${r.date}</span></div>
-                <div class="item-row"><b>${r.beanTitle}</b><span>失重: ${r.loss}%</span></div>
-                <div class="details">
-                    入豆: ${r.chargeT}℃ | 下豆: ${r.drop[1]}℃ (${drop.m}m${drop.s}s)<br>
-                    回溫: ${r.tp[1]}℃ (${tp.m}m${tp.s}s) | 一爆: ${r.fc[1]}℃ (${fc.m}m${fc.s}s)
-                    <div class="action-btns"><button class="btn-sm btn-edit" onclick="editRoast(${r.id}, event)">改</button><button class="btn-sm btn-del" onclick="deleteItem('roasts', ${r.id}, event)">刪</button></div>
+            return `
+            <div class="item-card">
+                <div class="item-header" onclick="toggleDetail(this); drawBatchChart(${r.id});">
+                    <div class="batch-info">
+                        <span class="batch-no">#${r.batchNo}</span>
+                        <b>${r.beanTitle}</b>
+                        <small>${r.date}</small>
+                    </div>
+                    <div style="text-align:right; font-size:12px; color:var(--primary)">失重 ${r.loss}%</div>
+                </div>
+                <div class="item-details" id="detail-${r.id}">
+                    <div class="info-row"><span>入豆溫: ${r.chargeT}℃</span><span>下豆溫: ${r.drop[1]}℃</span></div>
+                    <div class="info-row"><span>回溫: ${r.tp[1]}℃ (${tp.m}:${tp.s})</span><span>轉黃: ${r.dry[1]}℃ (${dry.m}:${dry.s})</span></div>
+                    <div class="info-row"><span>一爆: ${r.fc[1]}℃ (${fc.m}:${fc.s})</span><span>總時: ${drop.m}分${drop.s}秒</span></div>
+                    
+                    <div class="chart-container"><canvas id="chart-${r.id}"></canvas></div>
+                    
+                    <div class="action-btns">
+                        <button class="btn-sm btn-edit" onclick="editRoast(${r.id})">修改數據</button>
+                        <button class="btn-sm btn-del" onclick="deleteItem('roasts', ${r.id})">刪除紀錄</button>
+                    </div>
                 </div>
             </div>`;
         }).join('');
 
-        document.getElementById('salesHistory').innerHTML = db.sales.map(s => `
-            <div class="item-card" onclick="this.querySelector('.details').classList.toggle('show')">
-                <div class="item-row"><b>${s.buyer}</b><span class="profit">+$${s.profit}</span></div>
-                <div class="details">日期: ${s.date} | 重: ${s.weight}g | 價: $${s.price}<br>批次: ${s.batchNo}
-                    <div class="action-btns"><button class="btn-sm btn-edit" onclick="editSale(${s.id}, event)">改</button><button class="btn-sm btn-del" onclick="deleteItem('sales', ${s.id}, event)">刪</button></div>
+        // 3. 出貨列表
+        document.getElementById('salesList').innerHTML = db.sales.map(s => `
+            <div class="item-card">
+                <div class="item-header" onclick="toggleDetail(this)">
+                    <div class="batch-info"><b>${s.buyer || '一般客戶'}</b><span>${s.beanTitle} (${s.weight}g)</span></div>
+                    <div style="text-align:right" class="profit">+$${s.profit}</div>
+                </div>
+                <div class="item-details">
+                    <div class="info-row"><span>日期: ${s.date}</span><span>售價: HKD $${s.price}</span></div>
+                    <div class="action-btns">
+                        <button class="btn-sm btn-edit" onclick="editSale(${s.id})">修改</button>
+                        <button class="btn-sm btn-del" onclick="deleteItem('sales', ${s.id})">刪除</button>
+                    </div>
                 </div>
             </div>`).join('');
     }
 
-    function editBean(id, e) {
-        e.stopPropagation(); const b = db.beans.find(x => x.id === id);
-        document.getElementById('b_id').value = b.id; document.getElementById('b_origin').value = b.origin;
-        document.getElementById('b_estate').value = b.estate; document.getElementById('b_process').value = b.process;
-        document.getElementById('b_cost').value = b.cost;
+    function toggleDetail(el) {
+        const detail = el.nextElementSibling;
+        detail.classList.toggle('active');
     }
 
-    function editRoast(id, e) {
-        e.stopPropagation(); const r = db.roasts.find(x => x.id === id);
+    function drawBatchChart(id) {
+        const r = db.roasts.find(x => x.id === id);
+        const ctx = document.getElementById(`chart-${id}`).getContext('2d');
+        // 清除舊圖表防止重疊
+        if(window[`chartObj${id}`]) window[`chartObj${id}`].destroy();
+        
+        window[`chartObj${id}`] = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['0:00', `${fromSec(r.tp[0]).m}:${fromSec(r.tp[0]).s}`, `${fromSec(r.dry[0]).m}:${fromSec(r.dry[0]).s}`, `${fromSec(r.fc[0]).m}:${fromSec(r.fc[0]).s}`, `${fromSec(r.drop[0]).m}:${fromSec(r.drop[0]).s}`],
+                datasets: [{
+                    label: '溫度 (℃)',
+                    data: [r.chargeT, r.tp[1], r.dry[1], r.fc[1], r.drop[1]],
+                    borderColor: '#6F4E37',
+                    backgroundColor: 'rgba(111, 78, 55, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: { 
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: false } }
+            }
+        });
+    }
+
+    function editRoast(id) {
+        const r = db.roasts.find(x => x.id === id);
         const tp=fromSec(r.tp[0]), dry=fromSec(r.dry[0]), fc=fromSec(r.fc[0]), drop=fromSec(r.drop[0]);
-        document.getElementById('r_id').value = r.id; document.getElementById('r_batchNo').value = r.batchNo;
-        document.getElementById('r_date').value = r.date; document.getElementById('r_chargeT').value = r.chargeT;
+        document.getElementById('r_id').value = r.id;
+        document.getElementById('r_batchNo').value = r.batchNo;
+        document.getElementById('r_date').value = r.date;
+        document.getElementById('r_chargeT').value = r.chargeT;
         document.getElementById('r_tpM').value = tp.m; document.getElementById('r_tpS').value = tp.s; document.getElementById('r_tpT').value = r.tp[1];
         document.getElementById('r_dryM').value = dry.m; document.getElementById('r_dryS').value = dry.s; document.getElementById('r_dryT').value = r.dry[1];
         document.getElementById('r_fcM').value = fc.m; document.getElementById('r_fcS').value = fc.s; document.getElementById('r_fcT').value = r.fc[1];
         document.getElementById('r_dropM').value = drop.m; document.getElementById('r_dropS').value = drop.s; document.getElementById('r_dropT').value = r.drop[1];
-        document.getElementById('r_wIn').value = r.wIn; document.getElementById('r_wOut').value = r.wOut;
+        document.getElementById('r_wIn').value = r.wIn;
+        document.getElementById('r_wOut').value = r.wOut;
+        document.getElementById('r_beanSelect').value = r.beanId;
+        document.getElementById('btn-save-roast').innerText = "🆙 更新紀錄";
+        window.scrollTo(0,0);
     }
 
-    function editSale(id, e) {
-        e.stopPropagation(); const s = db.sales.find(x => x.id === id);
-        document.getElementById('s_id').value = s.id; document.getElementById('s_date').value = s.date;
-        document.getElementById('s_weight').value = s.weight; document.getElementById('s_price').value = s.price;
-        document.getElementById('s_buyer').value = s.buyer; document.getElementById('s_roastSelect').value = s.roastId;
+    function editBean(id) {
+        const b = db.beans.find(x => x.id === id);
+        document.getElementById('b_id').value = b.id;
+        document.getElementById('b_origin').value = b.origin;
+        document.getElementById('b_estate').value = b.estate;
+        document.getElementById('b_process').value = b.process;
+        document.getElementById('b_cost').value = b.cost;
+        window.scrollTo(0,0);
     }
 
-    function deleteItem(type, id, e) { e.stopPropagation(); if(confirm("確定刪除？")){ db[type]=db[type].filter(i=>i.id!==id); localStorage.setItem('coffee_'+type, JSON.stringify(db[type])); refreshAll(); } }
-    
+    function editSale(id) {
+        const s = db.sales.find(x => x.id === id);
+        document.getElementById('s_id').value = s.id;
+        document.getElementById('s_date').value = s.date;
+        document.getElementById('s_weight').value = s.weight;
+        document.getElementById('s_price').value = s.price;
+        document.getElementById('s_buyer').value = s.buyer;
+        document.getElementById('s_roastSelect').value = s.roastId;
+        window.scrollTo(0,0);
+    }
+
+    function deleteItem(type, id) {
+        if(confirm("確定刪除此紀錄？")) {
+            db[type] = db[type].filter(i => i.id !== id);
+            saveAndRefresh(type);
+        }
+    }
+
     function exportCSV(t) { 
         let d=db[t]; if(!d.length) return;
         let c="\uFEFF"+Object.keys(d[0]).join(",")+"\n";
@@ -279,8 +354,9 @@
     }
 
     window.onload = () => {
-        document.getElementById('r_date').valueAsDate = new Date();
-        document.getElementById('s_date').valueAsDate = new Date();
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('r_date').value = today;
+        document.getElementById('s_date').value = today;
         refreshAll();
     };
 </script>
